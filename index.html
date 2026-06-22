@@ -18,7 +18,8 @@
         #video-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center; }
         #video-overlay.active { display:flex; }
         #video-container { position:relative; width:80%; max-width:1200px; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; box-shadow:0 0 50px rgba(0,229,255,0.4); }
-        #video-player { width:100%; height:100%; display:block; }
+        #video-player-container { width:100%; height:100%; }
+        #video-player-container iframe { width:100%; height:100%; border:none; }
         #close-btn { position:absolute; top:15px; right:15px; width:48px; height:48px; background:rgba(0,0,0,0.6); border:2px solid #00E5FF; border-radius:50%; color:#00E5FF; font-size:28px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.3s; pointer-events:auto; z-index:10; box-shadow:0 0 15px rgba(0,229,255,0.4); }
         #close-btn:hover { background:rgba(179,71,234,0.7); border-color:#B347EA; color:#ffffff; transform:scale(1.15); box-shadow:0 0 25px rgba(179,71,234,0.6); }
     </style>
@@ -32,7 +33,7 @@
     <button id="enter-btn">点击以查看数字展厅</button>
     <div id="video-overlay">
         <div id="video-container">
-            <video id="video-player" controls preload="auto"></video>
+            <div id="video-player-container"></div>
             <div id="close-btn">✕</div>
         </div>
     </div>
@@ -181,11 +182,11 @@
 
         function createHotspots() {
             var hotspotConfigs = [
-                { azimuth: 15, elevation: 0, video: './实验一.mp4' },
-                { azimuth: 40, elevation: -10, video: './实验二.mp4' },
-                { azimuth: -35, elevation: 8, video: './实验三.mp4' },
-                { azimuth: 170, elevation: 0, video: './实验四.mp4' },
-                { azimuth: -155, elevation: -8, video: './实验五.mp4' }
+                { azimuth: 15, elevation: 0, bv: 'BV1Pr7T6gEsc' },
+                { azimuth: 40, elevation: -10, bv: 'BV1Ck7T6BEkW' },
+                { azimuth: -35, elevation: 8, bv: 'BV1Ck7T6BEtw' },
+                { azimuth: 170, elevation: 0, bv: 'BV1Cr7T6uEXM' },
+                { azimuth: -155, elevation: -8, bv: 'BV1Pr7T6gEtk' }
             ];
 
             hotspotConfigs.forEach(function(config, index) {
@@ -229,7 +230,7 @@
                 sprite.position.set(x, y, z);
                 sprite.scale.set(0.6, 0.6, 1);
 
-                sprite.userData = { video: config.video };
+                sprite.userData = { bv: config.bv };
 
                 sprite.onBeforeRender = function() {
                     sprite.lookAt(camera.position);
@@ -263,30 +264,34 @@
             var intersects = raycaster.intersectObjects(hotspots);
             if (intersects.length > 0) {
                 var hotspot = intersects[0].object;
-                openVideo(hotspot.userData.video);
+                openVideo(hotspot.userData.bv);
             }
         }
 
-        function openVideo(videoPath) {
+        function openVideo(bvCode) {
             var overlay = document.getElementById('video-overlay');
-            var player = document.getElementById('video-player');
+            var container = document.getElementById('video-player-container');
 
-            player.src = videoPath;
+            container.innerHTML = '';
+            var iframe = document.createElement('iframe');
+            iframe.src = 'https://player.bilibili.com/player.html?bvid=' + bvCode + '&page=1&autoplay=1&danmaku=0';
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.allowFullscreen = true;
+            iframe.allow = 'autoplay';
+            container.appendChild(iframe);
+
             overlay.classList.add('active');
             if (controls) controls.enabled = false;
             isVideoPlaying = true;
-
-            player.play().catch(function(e) {
-                console.warn('视频自动播放失败:', e);
-            });
         }
 
         function closeVideo() {
             var overlay = document.getElementById('video-overlay');
-            var player = document.getElementById('video-player');
+            var container = document.getElementById('video-player-container');
 
-            player.pause();
-            player.src = '';
+            container.innerHTML = '';
             overlay.classList.remove('active');
             if (controls) controls.enabled = true;
             isVideoPlaying = false;
